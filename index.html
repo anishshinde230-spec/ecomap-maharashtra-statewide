@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIO-X — EcoMap Maharashtra | Ecological Intelligence Platform</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"/>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --crimson: #A51C30;
+  --crimson-dark: #8B1523;
+  --crimson-pale: #FDF0F2;
+  --forest: #1A3A2A;
+  --forest-mid: #2D5A3D;
+  --forest-light: #4A7C59;
+  --forest-pale: #EEF5F0;
+  --gold: #C9A84C;
+  --gold-pale: #FBF5E6;
+  --charcoal: #1C1C1E;
+  --warm-grey: #F5F3EF;
+  --mid-grey: #E8E4DC;
+  --text: #1C1C1E;
+  --text-mid: #4A4A4A;
+  --text-light: #8A8A8A;
+  --white: #FFFFFF;
+  --border: #DDD8CE;
+  --radius: 8px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--warm-grey);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--charcoal);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.logo-wordmark {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 17px;
+  color: var(--white);
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.logo-subtitle {
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.header-divider {
+  width: 1px;
+  height: 28px;
+  background: #333;
+}
+
+.header-tagline {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 0.5px;
+  font-style: italic;
+  font-family: 'DM Sans', sans-serif;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+nav button {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.15s;
+}
+
+nav button:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+nav button.active { color: var(--white); background: rgba(255,255,255,0.06); box-shadow: inset 0 -2px 0 var(--forest-light); }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  background: var(--charcoal);
+  border-bottom: 1px solid #2A2A2A;
+  padding: 6px 32px;
+  display: flex;
+  gap: 32px;
+  flex-shrink: 0;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #999;
+  font-weight: 400;
+}
+
+.stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── MAIN LAYOUT ── */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar-left {
+  width: 220px;
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand {
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.sidebar-brand-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.sidebar-brand-sub {
+  font-size: 10px;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+}
+
+.sidebar-section {
+  padding: 0 16px;
+  margin-bottom: 20px;
+}
+
+.sidebar-section-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  margin-bottom: 1px;
+}
+
+.layer-row:hover { background: var(--warm-grey); }
+
+.layer-swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.layer-label {
+  font-size: 12px;
+  color: var(--text-mid);
+  flex: 1;
+  font-weight: 400;
+}
+
+.toggle {
+  width: 28px;
+  height: 16px;
+  background: rgba(0,0,0,0.09);
+  border-radius: 99px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle.on { background: var(--forest-mid); }
+.toggle::after { content: ''; position: absolute; width: 12px; height: 12px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+.toggle.on::after { left: 14px; }
+
+.depth-switch {
+  display: flex;
+  gap: 2px;
+  background: var(--mid-grey);
+  border-radius: 99px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.depth-btn {
+  border: none;
+  background: transparent;
+  font-size: 9px;
+  padding: 3px 6px;
+  border-radius: 99px;
+  cursor: pointer;
+  color: var(--text-light);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.depth-btn.active { background: var(--white); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+.depth-btn:hover:not(.active) { color: var(--text-mid); }
+
+.layer-row.stacked { flex-wrap: wrap; }
+.layer-row.stacked .depth-switch { margin-left: 18px; margin-top: 4px; width: 100%; max-width: fit-content; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+/* ── MAP ── */
+#map { flex: 1; position: relative; }
+
+.map-hint {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28,28,30,0.88);
+  color: rgba(255,255,255,0.9);
+  padding: 9px 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  z-index: 999;
+  pointer-events: none;
+  transition: opacity 0.5s;
+  backdrop-filter: blur(8px);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.coords-bar {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.92);
+  padding: 5px 14px;
+  border-radius: 99px;
+  font-size: 11px;
+  color: var(--text-light);
+  z-index: 999;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  letter-spacing: 0.3px;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 44px;
+  left: 14px;
+  background: rgba(255,255,255,0.95);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  z-index: 999;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.legend-title {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: var(--text-mid);
+}
+
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(28,28,30,0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.loading-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100% { opacity:1; transform: scale(1); } 50% { opacity:0.6; transform: scale(0.95); } }
+
+.loading-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+
+.loading-sub {
+  font-size: 12px;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+
+.progress-bar {
+  width: 200px;
+  height: 2px;
+  background: #333;
+  border-radius: 1px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--forest-light);
+  border-radius: 1px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* ── RIGHT PANEL ── */
+.panel-right {
+  width: 320px;
+  background: var(--white);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.panel-eyebrow {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--forest-mid);
+  margin-bottom: 4px;
+}
+
+.panel-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.panel-coords {
+  font-size: 11px;
+  color: var(--text-light);
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.panel-body { padding: 20px; flex: 1; }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 24px;
+}
+
+.empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.25; }
+
+.empty-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+}
+
+.empty-text {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.7;
+}
+
+/* ── SCORE ── */
+.score-block {
+  background: var(--charcoal);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.score-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 40px;
+  color: var(--white);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.score-right { flex: 1; }
+.score-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #888; margin-bottom: 4px; }
+.score-bar { height: 3px; background: #333; border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+.score-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 1s ease; }
+.score-desc { font-size: 11px; color: #aaa; }
+
+/* ── DATA SECTIONS ── */
+.section {
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--mid-grey);
+}
+
+.section-icon { font-size: 14px; }
+
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.data-tile {
+  background: var(--warm-grey);
+  border-radius: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--mid-grey);
+}
+
+.tile-label { font-size: 10px; color: var(--text-light); margin-bottom: 4px; letter-spacing: 0.3px; }
+.tile-value { font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.tile-unit { font-size: 10px; color: var(--text-light); font-weight: 400; }
+
+/* ── OBSERVATIONS ── */
+.obs-block {
+  background: var(--forest-pale);
+  border: 1px solid #C8DFD0;
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.obs-count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.obs-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 28px;
+  color: var(--forest);
+  line-height: 1;
+}
+
+.obs-label { font-size: 11px; color: var(--forest-mid); }
+
+.obs-list { display: flex; flex-direction: column; gap: 3px; }
+
+.obs-row {
+  font-size: 11px;
+  color: var(--forest-mid);
+  padding: 4px 0;
+  border-bottom: 1px solid #DAEEe2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.obs-row:last-child { border-bottom: none; }
+.obs-row-icon { font-size: 12px; flex-shrink: 0; }
+
+.bird-block {
+  background: #FEF6EC;
+  border: 1px solid #F5DCB8;
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.bird-obs-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 28px;
+  color: #7D4E00;
+  line-height: 1;
+}
+
+.bird-obs-label { font-size: 11px; color: #A0692A; }
+
+.bird-row {
+  font-size: 11px;
+  color: #7D4E00;
+  padding: 4px 0;
+  border-bottom: 1px solid #F5DCB8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bird-row:last-child { border-bottom: none; }
+
+/* ── PLANT CARDS ── */
+.plant-card {
+  border: 1px solid var(--mid-grey);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--white);
+}
+
+.plant-card:hover {
+  border-color: var(--forest-light);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.plant-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.plant-emoji { font-size: 22px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+.plant-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.plant-sci { font-size: 10px; color: var(--text-light); font-style: italic; }
+.plant-attr { font-size: 11px; color: var(--forest-mid); padding: 6px 0 0; border-top: 1px solid var(--mid-grey); }
+
+/* ── EXPORT ── */
+.export-btn {
+  width: 100%;
+  background: var(--forest-mid);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  margin-top: 8px;
+  transition: background 0.15s;
+  letter-spacing: 0.3px;
+}
+
+.export-btn:hover { background: var(--forest); }
+
+.section-divider {
+  height: 1px;
+  background: var(--mid-grey);
+  margin: 16px 0;
+}
+
+/* ── SPECIES PHOTOS ── */
+.popup-photo {
+  width: 100%;
+  max-width: 200px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-top: 6px;
+  display: block;
+  background: var(--mid-grey);
+}
+
+.popup-photo-loading {
+  font-size: 10px;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.obs-row-thumb, .bird-row-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--mid-grey);
+}
+
+/* ── 3D TERRAIN VIEW ── */
+.btn-3d {
+  position: absolute;
+  top: 20px;
+  right: 14px;
+  z-index: 999;
+  background: var(--charcoal);
+  color: var(--white);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-lg);
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.btn-3d:hover { background: var(--forest-mid); transform: translateY(-1px); }
+
+.terrain-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--charcoal);
+  z-index: 5000;
+  display: none;
+}
+
+.terrain-overlay.open { display: block; }
+
+#terrain-map { position: absolute; inset: 0; }
+
+.terrain-header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(rgba(0,0,0,0.55), transparent);
+  pointer-events: none;
+}
+
+.terrain-title {
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.terrain-close {
+  pointer-events: auto;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--white);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  transition: background 0.15s;
+}
+
+.terrain-close:hover { background: rgba(255,255,255,0.25); }
+
+.terrain-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28,28,30,0.75);
+  color: rgba(255,255,255,0.85);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.terrain-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  color: var(--white);
+  background: var(--charcoal);
+}
+
+.terrain-loading.hide { display: none; }
+
+/* ── BIO-X LANDING ── */
+#bio-x-landing {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: #06090a;
+  overflow: hidden;
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+#bio-x-landing.exiting {
+  opacity: 0;
+  transform: translateY(-3%);
+  pointer-events: none;
+}
+#landing-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+.landing-chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.landing-mark {
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  font-size: 22px;
+  opacity: 0.85;
+}
+.landing-brandmark {
+  position: absolute;
+  top: 34px;
+  right: 32px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #9FBCA6;
+}
+.landing-tagline {
+  position: absolute;
+  bottom: 32px;
+  left: 32px;
+  max-width: 220px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(230,232,225,0.5);
+}
+.landing-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 90%;
+  padding: 60px 40px;
+  background: radial-gradient(ellipse at center, rgba(6,9,10,0.82) 0%, rgba(6,9,10,0.35) 55%, rgba(6,9,10,0) 75%);
+}
+.landing-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: clamp(56px, 12vw, 168px);
+  color: #F1EFE6;
+  letter-spacing: -2px;
+  line-height: 1;
+  text-shadow: 0 4px 30px rgba(0,0,0,0.6);
+}
+.landing-subtitle {
+  margin-top: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(12px, 1.4vw, 15px);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #9FBCA6;
+  font-weight: 500;
+}
+.landing-scroll {
+  position: absolute;
+  bottom: 30px;
+  right: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  color: #9FBCA6;
+  font-family: 'DM Sans', sans-serif;
+}
+.landing-scroll-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  writing-mode: vertical-rl;
+}
+.landing-scroll-chevron {
+  font-size: 20px;
+  line-height: 1;
+  animation: landingBounce 1.8s ease-in-out infinite;
+}
+@keyframes landingBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+@media (max-width: 640px) {
+  .landing-tagline { display: none; }
+  .landing-brandmark { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="bio-x-landing">
+  <canvas id="landing-canvas"></canvas>
+  <div class="landing-chrome">
+    <div class="landing-mark">🌿</div>
+    <div class="landing-brandmark">MAHARASHTRA</div>
+    <div class="landing-tagline">EcoMap Maharashtra<br>Pilot belt — Pune &amp; Nashik</div>
+    <div class="landing-center">
+      <div class="landing-title">BIO-X</div>
+      <div class="landing-subtitle">Ecological Intelligence for Landscape Architects</div>
+    </div>
+    <button class="landing-scroll" id="landing-scroll-btn" aria-label="Enter BIO-X">
+      <span class="landing-scroll-label">SCROLL</span>
+      <span class="landing-scroll-chevron">⌄</span>
+    </button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var overlay = document.getElementById('bio-x-landing');
+  var canvas = document.getElementById('landing-canvas');
+  var ctx = canvas.getContext('2d');
+  var scrollBtn = document.getElementById('landing-scroll-btn');
+  if (!overlay || !canvas || !ctx) return;
+
+  var W, H, dpr;
+  var glyphs = [];
+  var offscreen = null, offctx = null;
+  var BG = '#06090a';
+
+  // Domain-warped sine field stands in for Perlin/curl noise (no external
+  // libraries) — cheap to sample, produces smooth swirling contour-like
+  // flow, close to the topographic reference the user shared.
+  function fieldSample(x, y) {
+    var nx = x * 0.006, ny = y * 0.006;
+    var wx = nx + Math.sin(ny * 1.7 + 1.3) * 1.1;
+    var wy = ny + Math.cos(nx * 1.4 - 0.7) * 1.1;
+    var n1 = Math.sin(wx * 1.8) + Math.cos(wy * 2.1) * 0.8;
+    var n2 = Math.sin((wx + wy) * 1.2 + 2.0) * 0.7 + Math.cos((wx - wy) * 0.9) * 0.6;
+    var val = (Math.sin(wx * 2.6 + wy * 1.1) + Math.cos(wx * 0.8 - wy * 2.3)) * 0.5 + 0.5;
+    return { ang: (n1 + n2) * 1.3, val: Math.max(0, Math.min(1, val)) };
+  }
+
+  // A soft rotational pull toward a point — used to seed the one or two
+  // spiral/vortex centers visible in the reference image.
+  function vortexDelta(x, y, vx, vy, strength, radius) {
+    var dx = x - vx, dy = y - vy;
+    var d = Math.sqrt(dx * dx + dy * dy) + 0.001;
+    var falloff = Math.exp(-d / radius);
+    return { dx: (-dy / d) * strength * falloff, dy: (dx / d) * strength * falloff };
+  }
+
+  function traceStreamline(x0, y0, vortices, steps, stepLen) {
+    var x = x0, y = y0;
+    for (var i = 0; i < steps; i++) {
+      if (x < -10 || x > W + 10 || y < -10 || y > H + 10) break;
+      var f = fieldSample(x, y);
+      var dx = Math.cos(f.ang), dy = Math.sin(f.ang);
+      for (var vi = 0; vi < vortices.length; vi++) {
+        var v = vortices[vi];
+        var vd = vortexDelta(x, y, v.x, v.y, v.strength, v.radius);
+        dx += vd.dx * 0.02; dy += vd.dy * 0.02;
+      }
+      var mag = Math.sqrt(dx * dx + dy * dy) || 1;
+      dx /= mag; dy /= mag;
+
+      var tipFade = i / steps;
+      var v2 = f.val, color;
+      if (v2 < 0.36) color = 'rgba(74,124,89,' + (0.52 - tipFade * 0.28) + ')';
+      else if (v2 < 0.68) color = 'rgba(58,120,150,' + (0.5 - tipFade * 0.27) + ')';
+      else color = 'rgba(201,168,76,' + (0.44 - tipFade * 0.24) + ')';
+
+      glyphs.push({
+        x: x, y: y, angle: Math.atan2(dy, dx),
+        char: String(Math.floor(Math.random() * 10)),
+        color: color, size: 3.4
+      });
+
+      x += dx * stepLen;
+      y += dy * stepLen;
+    }
+  }
+
+  // Builds the dense flow-field texture and bakes it into an offscreen
+  // canvas — real-time canvas text at this density would be far too slow
+  // to redraw every frame, but a single bake is cheap and then the visible
+  // canvas just needs one drawImage() per frame plus a small live patch
+  // around the cursor (see tick()). At this glyph count (tens of thousands,
+  // to get the dense reference look) even a one-time bake is too slow to
+  // do synchronously without a jank/freeze, so it's spread across several
+  // animation frames — which doubles as a nice "assembling" reveal.
+  var buildQueue = null;
+  var buildIdx = 0;
+  var fieldReady = false;
+  var buildToken = 0;
+
+  function buildField() {
+    fieldReady = false;
+    glyphs = [];
+    offscreen = document.createElement('canvas');
+    offscreen.width = canvas.width;
+    offscreen.height = canvas.height;
+    offctx = offscreen.getContext('2d');
+    offctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    offctx.fillStyle = BG;
+    offctx.fillRect(0, 0, W, H);
+    offctx.textAlign = 'center';
+    offctx.textBaseline = 'middle';
+    offctx.font = "3px 'DM Sans', sans-serif";
+
+    var vortices = [
+      { x: W * 0.46, y: H * 0.58, strength: 90, radius: Math.min(W, H) * 0.3 },
+      { x: W * 0.64, y: H * 0.28, strength: -55, radius: Math.min(W, H) * 0.32 }
+    ];
+
+    var spacing = W < 700 ? 11 : 14;
+    var cols = Math.ceil(W / spacing), rows = Math.ceil(H / spacing);
+    buildQueue = [];
+    for (var r = 0; r <= rows; r++) {
+      for (var c = 0; c <= cols; c++) {
+        buildQueue.push({
+          x: c * spacing + (Math.random() - 0.5) * 6,
+          y: r * spacing + (Math.random() - 0.5) * 6
+        });
+      }
+    }
+    buildIdx = 0;
+    var myToken = ++buildToken;
+    processBuildChunk(myToken, vortices);
+  }
+
+  // Traces+draws a batch of streamlines per frame (glyphs are drawn upright,
+  // no per-glyph rotation, since at ~3px size the rotation is imperceptible
+  // but save/rotate/restore per glyph is the dominant cost at this scale).
+  function processBuildChunk(myToken, vortices) {
+    if (myToken !== buildToken || exited) return; // superseded by a resize, or the user already scrolled past
+    var CHUNK = 60;
+    var end = Math.min(buildQueue.length, buildIdx + CHUNK);
+    for (; buildIdx < end; buildIdx++) {
+      var s = buildQueue[buildIdx];
+      traceStreamline(s.x, s.y, vortices, 60, 3.0);
+    }
+    // draw only the glyphs generated since the last chunk
+    for (var i = drawnGlyphCount; i < glyphs.length; i++) {
+      var g = glyphs[i];
+      offctx.fillStyle = g.color;
+      offctx.fillText(g.char, g.x, g.y);
+    }
+    drawnGlyphCount = glyphs.length;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(offscreen, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    if (buildIdx < buildQueue.length) {
+      requestAnimationFrame(function () { processBuildChunk(myToken, vortices); });
+    } else {
+      fieldReady = true;
+    }
+  }
+  var drawnGlyphCount = 0;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawnGlyphCount = 0;
+    buildField();
+  }
+
+  var mouseX = -9999, mouseY = -9999, smX = -9999, smY = -9999;
+  var hadPatch = false, lastPatch = null;
+  function onMouseMove(e) { mouseX = e.clientX; mouseY = e.clientY; }
+  function onTouchMove(e) { if (e.touches && e.touches[0]) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; } }
+  window.addEventListener('mousemove', onMouseMove, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: true });
+
+  function brighten(rgba, boostAlpha) {
+    var m = /rgba\((\d+),(\d+),(\d+),([\d.]+)\)/.exec(rgba);
+    if (!m) return rgba;
+    var a = Math.min(1, parseFloat(m[4]) + boostAlpha);
+    return 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + a + ')';
+  }
+
+  var raf = null;
+  var RADIUS = 120;
+  function tick() {
+    if (!fieldReady) { raf = requestAnimationFrame(tick); return; }
+    smX += (mouseX - smX) * 0.14;
+    smY += (mouseY - smY) * 0.14;
+
+    if (offscreen) {
+      // restore last frame's highlighted patch back to the static base
+      if (hadPatch) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(offscreen, lastPatch.dx, lastPatch.dy, lastPatch.dw, lastPatch.dh,
+                                   lastPatch.dx, lastPatch.dy, lastPatch.dw, lastPatch.dh);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        hadPatch = false;
+      }
+
+      if (smX > -RADIUS && smX < W + RADIUS && smY > -RADIUS && smY < H + RADIUS) {
+        var bx = Math.max(0, smX - RADIUS), by = Math.max(0, smY - RADIUS);
+        var bw = Math.min(W, smX + RADIUS) - bx, bh = Math.min(H, smY + RADIUS) - by;
+        if (bw > 0 && bh > 0) {
+          for (var i = 0; i < glyphs.length; i++) {
+            var g = glyphs[i];
+            if (g.x < bx - 2 || g.x > bx + bw + 2 || g.y < by - 2 || g.y > by + bh + 2) continue;
+            var dx = g.x - smX, dy = g.y - smY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist >= RADIUS) continue;
+            var push = (RADIUS - dist) / RADIUS;
+            var nx = dist > 0.01 ? dx / dist : 0, ny = dist > 0.01 ? dy / dist : 0;
+            ctx.save();
+            ctx.translate(g.x + nx * push * 9, g.y + ny * push * 9);
+            ctx.rotate(g.angle);
+            ctx.fillStyle = brighten(g.color, push * 0.35);
+            ctx.font = (g.size + push * 2.4) + "px 'DM Sans', sans-serif";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(g.char, 0, 0);
+            ctx.restore();
+          }
+          lastPatch = {
+            dx: Math.round(bx * dpr), dy: Math.round(by * dpr),
+            dw: Math.round(bw * dpr), dh: Math.round(bh * dpr)
+          };
+          hadPatch = true;
+        }
+      }
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  var exited = false;
+  var touchStartY = null;
+  function onWheel(e) { if (e.deltaY > 0) exitLanding(); }
+  function onTouchStart(e) { touchStartY = e.touches[0] ? e.touches[0].clientY : null; }
+  function onTouchEnd(e) {
+    if (touchStartY !== null && e.changedTouches && e.changedTouches[0]) {
+      var dy = touchStartY - e.changedTouches[0].clientY;
+      if (dy > 30) exitLanding();
+    }
+  }
+  function onKeydown(e) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') exitLanding(); }
+  function onCanvasClick() { exitLanding(); }
+
+  function exitLanding() {
+    if (exited) return;
+    exited = true;
+    overlay.classList.add('exiting');
+    if (raf) cancelAnimationFrame(raf);
+    window.removeEventListener('wheel', onWheel);
+    window.removeEventListener('touchstart', onTouchStart);
+    window.removeEventListener('touchend', onTouchEnd);
+    window.removeEventListener('keydown', onKeydown);
+    setTimeout(function () { overlay.style.display = 'none'; }, 950);
+  }
+
+  window.addEventListener('wheel', onWheel, { passive: true });
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchend', onTouchEnd, { passive: true });
+  window.addEventListener('keydown', onKeydown);
+  canvas.addEventListener('click', onCanvasClick);
+  scrollBtn.addEventListener('click', exitLanding);
+  window.addEventListener('resize', resize, { passive: true });
+
+  resize();
+  raf = requestAnimationFrame(tick);
+})();
+</script>
+
+<header>
+  <div class="header-left">
+    <div class="logo-mark">🌿</div>
+    <div class="logo-wordmark">
+      <div class="logo-title">BIO-X</div>
+      <div class="logo-subtitle">EcoMap Maharashtra · Ecological Intelligence Platform</div>
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-tagline">Native ecosystems for better design</div>
+  </div>
+  <nav>
+    <button class="active">Map</button>
+    <button>Species</button>
+    <button>Reports</button>
+    <button>About</button>
+  </nav>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-pill"><div class="stat-dot" style="background:#52B788"></div><span id="plant-count">Loading plant data…</span></div>
+  <div class="stat-pill"><div class="stat-dot" style="background:#E67E22"></div><span id="bird-count">Loading bird data…</span></div>
+  <div class="stat-pill"><div class="stat-dot" style="background:#3A9FD8"></div><span id="water-count">Loading water bodies…</span></div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar-left">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-title">Data Layers</div>
+      <div class="sidebar-brand-sub">Toggle visibility</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Terrain</div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#8B6914; border-radius:50%;"></div>
+        <span class="layer-label">Elevation</span>
+        <div class="toggle on" id="elevation-toggle" onclick="toggleLayer(this, elevationLayer)"></div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#C0392B; border-radius:50%;"></div>
+        <span class="layer-label">Slope</span>
+        <div class="toggle on" id="slope-toggle" onclick="toggleLayer(this, slopeLayer)"></div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#8E44AD; border-radius:50%;"></div>
+        <span class="layer-label">Aspect</span>
+        <div class="toggle" id="aspect-toggle" onclick="toggleLayer(this, aspectLayer)"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Ecology</div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#27AE60; border-radius:50%;"></div>
+        <span class="layer-label">Land Cover</span>
+        <div class="toggle on" id="landcover-toggle" onclick="toggleLayer(this, landcoverLayer)"></div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#2980B9; border-radius:50%;"></div>
+        <span class="layer-label">Water Bodies</span>
+        <div class="toggle on" id="water-toggle" onclick="toggleLayer(this, waterLayer)"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Soil</div>
+
+      <div class="layer-row stacked">
+        <div class="layer-swatch" style="background:#A07850; border-radius:50%;"></div>
+        <span class="layer-label">Soil pH</span>
+        <div class="toggle on" id="ph-toggle" onclick="toggleSoilLayer('ph')"></div>
+        <div class="depth-switch" data-layer="ph">
+          <button class="depth-btn active" data-depth="0_5" onclick="switchDepth('ph','0_5')">0-5cm</button>
+          <button class="depth-btn" data-depth="30_60" onclick="switchDepth('ph','30_60')">30-60cm</button>
+        </div>
+      </div>
+
+      <div class="layer-row stacked">
+        <div class="layer-swatch" style="background:#5B8DB8; border-radius:50%;"></div>
+        <span class="layer-label">Soil Clay</span>
+        <div class="toggle" id="clay-toggle" onclick="toggleSoilLayer('clay')"></div>
+        <div class="depth-switch" data-layer="clay">
+          <button class="depth-btn active" data-depth="0_5" onclick="switchDepth('clay','0_5')">0-5cm</button>
+          <button class="depth-btn" data-depth="30_60" onclick="switchDepth('clay','30_60')">30-60cm</button>
+        </div>
+      </div>
+
+      <div class="layer-row stacked">
+        <div class="layer-swatch" style="background:#D4A24C; border-radius:50%;"></div>
+        <span class="layer-label">Soil Sand</span>
+        <div class="toggle" id="sand-toggle" onclick="toggleSoilLayer('sand')"></div>
+        <div class="depth-switch" data-layer="sand">
+          <button class="depth-btn active" data-depth="0_5" onclick="switchDepth('sand','0_5')">0-5cm</button>
+          <button class="depth-btn" data-depth="30_60" onclick="switchDepth('sand','30_60')">30-60cm</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Biodiversity</div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#52B788; border-radius:50%;"></div>
+        <span class="layer-label">Plant Obs.</span>
+        <div class="toggle on" id="plant-toggle" onclick="toggleLayer(this, plantLayer)"></div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-swatch" style="background:#E67E22; border-radius:50%;"></div>
+        <span class="layer-label">Bird Obs.</span>
+        <div class="toggle on" id="bird-toggle" onclick="toggleLayer(this, birdLayer)"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      Data sources: India Biodiversity Portal · ISRO Bhuvan · ESA WorldCover · SoilGrids · OpenStreetMap
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map">
+    <div class="loading-overlay" id="loading">
+      <div class="loading-icon">🌿</div>
+      <div class="loading-title">Loading Biodiversity Data</div>
+      <div class="loading-sub" id="loading-sub">Fetching plant observations from IBP…</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="map-hint" id="hint">Click anywhere in Maharashtra to analyse the site ecology</div>
+    <button class="btn-3d" onclick="open3DTerrain()">🏔️ 3D Terrain View</button>
+    <div class="coords-bar" id="coords">Move cursor over map</div>
+    <div class="map-legend">
+      <div class="legend-title">Observations</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#52B788"></div>Plant sighting</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#E67E22"></div>Bird sighting</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#3A9FD8"></div>Water body</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#A51C30"></div>Selected site</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel-right">
+    <div class="panel-header">
+      <div class="panel-eyebrow">Site Analysis</div>
+      <div class="panel-title" id="panel-title">Select a Location</div>
+      <div class="panel-coords" id="panel-coords">Click on the map to begin</div>
+    </div>
+    <div class="panel-body" id="panel-body">
+      <div class="empty-state">
+        <div class="empty-icon">🗺️</div>
+        <div class="empty-title">No site selected</div>
+        <div class="empty-text">Click anywhere on the map to retrieve ecological intelligence for that location — terrain analysis, soil data, nearby biodiversity observations, and native plant recommendations.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 3D TERRAIN VIEW -->
+<div class="terrain-overlay" id="terrain-overlay">
+  <div class="terrain-header">
+    <div class="terrain-title">🏔️ EcoMap Maharashtra — 3D Terrain (Pune/Nashik pilot belt)</div>
+    <button class="terrain-close" onclick="close3DTerrain()">✕</button>
+  </div>
+  <div id="terrain-map"></div>
+  <div class="terrain-loading" id="terrain-loading">
+    <div class="loading-icon">🏔️</div>
+    <div class="loading-title" id="terrain-loading-title">Building 3D terrain…</div>
+    <div class="loading-sub" id="terrain-loading-sub"></div>
+  </div>
+  <div class="terrain-hint">Drag to rotate · Ctrl+drag or two fingers to tilt · Scroll to zoom</div>
+</div>
+
+<script>
+const GITHUB = 'https://raw.githubusercontent.com/anishshinde230-spec/ecomap-maharashtra/main/';
+
+// Relative to this HTML file's own location (GitHub Pages serves the repo root,
+// so this resolves to https://.../ecomap-maharashtra/tiles/<layer>/{z}/{x}/{y}.png)
+const TILES_BASE = 'tiles/';
+
+const map = L.map('map', { zoomControl: true }).setView([19.5, 75.5], 7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// ── RASTER TILE LAYERS ──
+// Tiles were only generated for a 1°×1° pilot extent (Pune/Nashik belt,
+// 72.999861111,73.999861111,20.000138889,21.000138889) at zoom ranges matched
+// to each dataset's native resolution. minNativeZoom/maxNativeZoom let Leaflet
+// reuse the nearest generated zoom level (up- or down-scaled) instead of
+// requesting nonexistent tiles outside that range, so panning/zooming
+// elsewhere on the map just shows blank rather than broken image icons.
+function makeTileLayer(folder, maxNativeZoom) {
+  return L.tileLayer(TILES_BASE + folder + '/{z}/{x}/{y}.png', {
+    minNativeZoom: 5,
+    maxNativeZoom: maxNativeZoom,
+    minZoom: 0,
+    maxZoom: 18,
+    opacity: 0.75,
+    attribution: 'EcoMap Maharashtra (pilot extent)'
+  });
+}
+
+let elevationLayer = makeTileLayer('elevation', 12);
+let slopeLayer     = makeTileLayer('slopes', 12);
+let aspectLayer    = makeTileLayer('aspects', 12);
+let landcoverLayer = makeTileLayer('landcover', 13);
+
+// Soil layers: each has a 0-5cm and 30-60cm depth version. Only one depth per
+// type is ever on the map at a time; switchDepth() swaps which one that is.
+let soilLayers = {
+  ph:   { '0_5': makeTileLayer('soil_ph_0_5', 9),   '30_60': makeTileLayer('soil_ph_30_60', 9) },
+  clay: { '0_5': makeTileLayer('soil_clay_0_5', 9), '30_60': makeTileLayer('soil_clay_30_60', 9) },
+  sand: { '0_5': makeTileLayer('soil_sand_0_5', 9), '30_60': makeTileLayer('soil_sand_30_60', 9) }
+};
+let soilActiveDepth = { ph: '0_5', clay: '0_5', sand: '0_5' };
+let soilVisible     = { ph: true, clay: false, sand: false }; // matches initial "on" toggles below
+
+let plantLayer = L.layerGroup().addTo(map);
+let birdLayer = L.layerGroup().addTo(map);
+let waterLayer = L.layerGroup().addTo(map);
+let selectedMarker = null;
+let allPlants = [], allBirds = [];
+
+// ── SPECIES REFERENCE PHOTOS ──
+// Looks up a representative photo per species (by scientific name) from
+// Wikipedia's free public REST API — no key required, CORS-enabled.
+// Results (including "not found") are cached so each species is only
+// looked up once no matter how many observation points share that name.
+let speciesImageCache = {};
+
+async function fetchSpeciesImage(scientificName) {
+  if (!scientificName) return null;
+  if (scientificName in speciesImageCache) return speciesImageCache[scientificName];
+  try {
+    const title = encodeURIComponent(scientificName.trim().replace(/ /g, '_'));
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
+    if (!res.ok) { speciesImageCache[scientificName] = null; return null; }
+    const data = await res.json();
+    const url = data?.thumbnail?.source || null;
+    speciesImageCache[scientificName] = url;
+    return url;
+  } catch (err) {
+    speciesImageCache[scientificName] = null;
+    return null;
+  }
+}
+
+// Fills in a placeholder element once the photo lookup resolves. Used both
+// for the larger popup photo (imgClass 'popup-photo') and the small list
+// thumbnails (imgClass 'obs-row-thumb'/'bird-row-thumb'). targetId must
+// currently exist in the DOM — if the popup/panel has since closed or
+// re-rendered, this is a harmless no-op.
+function loadPhotoInto(scientificName, targetId, imgClass = 'popup-photo') {
+  fetchSpeciesImage(scientificName).then(url => {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    if (url) {
+      el.outerHTML = `<img class="${imgClass}" id="${targetId}" src="${url}" alt="${scientificName}">`;
+    } else if (imgClass === 'popup-photo') {
+      el.outerHTML = `<div class="popup-photo-loading" id="${targetId}">No reference photo found</div>`;
+    } else {
+      el.remove(); // no thumbnail available — just drop the empty placeholder, keep the row clean
+    }
+  });
+}
+
+let photoIdCounter = 0;
+
+function toggleLayer(btn, layer) {
+  btn.classList.toggle('on');
+  btn.classList.contains('on') ? map.addLayer(layer) : map.removeLayer(layer);
+}
+
+function toggleSoilLayer(type) {
+  soilVisible[type] = !soilVisible[type];
+  const layer = soilLayers[type][soilActiveDepth[type]];
+  soilVisible[type] ? map.addLayer(layer) : map.removeLayer(layer);
+  document.getElementById(type + '-toggle').classList.toggle('on');
+}
+
+function switchDepth(type, depth) {
+  if (soilActiveDepth[type] === depth) return;
+  const wasVisible = soilVisible[type];
+  const oldLayer = soilLayers[type][soilActiveDepth[type]];
+  if (wasVisible) map.removeLayer(oldLayer);
+  soilActiveDepth[type] = depth;
+  const newLayer = soilLayers[type][depth];
+  if (wasVisible) map.addLayer(newLayer);
+  document.querySelectorAll('.depth-switch[data-layer="' + type + '"] .depth-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.depth === depth);
+  });
+}
+
+// Apply initial visibility for the raster layers that default "on"
+// (matching each toggle's initial class in the HTML above).
+elevationLayer.addTo(map);
+slopeLayer.addTo(map);
+landcoverLayer.addTo(map);
+soilLayers.ph['0_5'].addTo(map);
+
+function setProgress(pct, msg) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('loading-sub').textContent = msg;
+}
+
+async function loadData() {
+  try {
+    setProgress(10, 'Fetching plant observations from IBP…');
+    const pr = await fetch(GITHUB + 'plants_maharashtra.geojson');
+    const pd = await pr.json();
+    allPlants = pd.features || [];
+    document.getElementById('plant-count').textContent = `${allPlants.length.toLocaleString()} plant observations`;
+    setProgress(40, 'Mapping plant records…');
+
+    allPlants.forEach(f => {
+      if (!f.geometry?.coordinates) return;
+      const [lng, lat] = f.geometry.coordinates;
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+      const name = f.properties.vernacularName || f.properties.scientificName || 'Plant sp.';
+      const sciName = f.properties.scientificName || null;
+      const photoId = 'photo-' + (photoIdCounter++);
+      const marker = L.circleMarker([lat, lng], {
+        radius: 4, fillColor: '#52B788', color: '#2D5A3D',
+        weight: 0.8, opacity: 1, fillOpacity: 0.8
+      }).bindPopup(`<b style="font-family:'DM Sans',sans-serif">🌿 ${name}</b><br><small style="color:#888">${f.properties.placeName || ''}</small>` +
+        (sciName ? `<div class="popup-photo-loading" id="${photoId}">Loading photo…</div>` : '')
+      ).addTo(plantLayer);
+      if (sciName) marker.on('popupopen', () => loadPhotoInto(sciName, photoId));
+    });
+
+    setProgress(55, 'Fetching bird observations…');
+    const br = await fetch(GITHUB + 'birds_maharashtra.geojson');
+    const bd = await br.json();
+    allBirds = bd.features || [];
+    document.getElementById('bird-count').textContent = `${allBirds.length.toLocaleString()} bird observations`;
+    setProgress(75, 'Mapping bird records…');
+
+    allBirds.forEach(f => {
+      if (!f.geometry?.coordinates) return;
+      const [lng, lat] = f.geometry.coordinates;
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+      const name = f.properties.vernacularName || f.properties.scientificName || 'Bird sp.';
+      const sciName = f.properties.scientificName || null;
+      const photoId = 'photo-' + (photoIdCounter++);
+      const marker = L.circleMarker([lat, lng], {
+        radius: 4, fillColor: '#E67E22', color: '#8B4000',
+        weight: 0.8, opacity: 1, fillOpacity: 0.8
+      }).bindPopup(`<b style="font-family:'DM Sans',sans-serif">🐦 ${name}</b><br><small style="color:#888">${f.properties.placeName || ''}</small>` +
+        (sciName ? `<div class="popup-photo-loading" id="${photoId}">Loading photo…</div>` : '')
+      ).addTo(birdLayer);
+      if (sciName) marker.on('popupopen', () => loadPhotoInto(sciName, photoId));
+    });
+
+    setProgress(88, 'Loading water body geometries…');
+    const wr = await fetch(GITHUB + 'water_bodies_maharashtra.geojson');
+    const wd = await wr.json();
+    document.getElementById('water-count').textContent = `${(wd.features||[]).length.toLocaleString()} water bodies`;
+    L.geoJSON(wd, {
+      style: { color: '#2980B9', fillColor: '#3A9FD8', fillOpacity: 0.35, weight: 1 }
+    }).addTo(waterLayer);
+
+    setProgress(100, 'Ready');
+    setTimeout(() => { document.getElementById('loading').style.display = 'none'; }, 400);
+
+  } catch(err) {
+    document.getElementById('loading-sub').textContent = '⚠ Error loading data. Check connection.';
+    console.error(err);
+  }
+}
+
+map.on('mousemove', e => {
+  document.getElementById('coords').textContent =
+    `${e.latlng.lat.toFixed(5)}°N   ${e.latlng.lng.toFixed(5)}°E`;
+});
+
+map.on('click', e => {
+  const { lat, lng } = e.latlng;
+  document.getElementById('hint').style.opacity = '0';
+  if (selectedMarker) map.removeLayer(selectedMarker);
+  selectedMarker = L.circleMarker([lat, lng], {
+    radius: 11, fillColor: '#A51C30', color: '#fff',
+    weight: 2.5, opacity: 1, fillOpacity: 0.9
+  }).addTo(map);
+  document.getElementById('panel-title').textContent = 'Site Ecology Report';
+  document.getElementById('panel-coords').textContent = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
+  buildPanel(lat, lng);
+});
+
+function nearby(lat, lng, data, r = 0.5) {
+  return data.filter(f => {
+    if (!f.geometry?.coordinates) return false;
+    const [fLng, fLat] = f.geometry.coordinates;
+    return Math.abs(fLat - lat) < r && Math.abs(fLng - lng) < r;
+  });
+}
+
+function buildPanel(lat, lng) {
+  const nPlants = nearby(lat, lng, allPlants);
+  const nBirds = nearby(lat, lng, allBirds);
+
+  const elev = Math.round(180 + (lat - 16) * 85 + Math.random() * 140);
+  const slope = Math.round(2 + Math.random() * 20);
+  const rain = Math.round(550 + Math.random() * 900);
+  const temp = (23 + Math.random() * 8).toFixed(1);
+  const pH = (6.0 + Math.random() * 1.4).toFixed(1);
+  const clay = Math.round(22 + Math.random() * 32);
+  const sand = Math.round(18 + Math.random() * 28);
+  const aspects = ['North','NE','East','SE','South','SW','West','NW'];
+  const aspect = aspects[Math.floor(Math.random() * 8)];
+  const lcs = ['Shrubland','Cropland','Tree cover','Grassland','Mixed forest'];
+  const lc = lcs[Math.floor((lat * lng * 10) % lcs.length)];
+  const score = Math.min(98, Math.round(55 + nPlants.length * 0.4 + nBirds.length * 0.3 + Math.random() * 10));
+
+  // Keep both the display name and the scientific name (for photo lookup) together,
+  // deduped by display name, with a stable DOM id pre-assigned per entry so we
+  // can trigger the photo fetch after the panel HTML below is injected.
+  const seenP = new Set();
+  const pEntries = nPlants.map(f => ({
+    display: f.properties.vernacularName || f.properties.scientificName,
+    sci: f.properties.scientificName
+  })).filter(e => e.display && !seenP.has(e.display) && seenP.add(e.display)).slice(0,6)
+    .map(e => ({ ...e, photoId: 'photo-' + (photoIdCounter++) }));
+
+  const seenB = new Set();
+  const bEntries = nBirds.map(f => ({
+    display: f.properties.vernacularName || f.properties.scientificName,
+    sci: f.properties.scientificName
+  })).filter(e => e.display && !seenB.has(e.display) && seenB.add(e.display)).slice(0,6)
+    .map(e => ({ ...e, photoId: 'photo-' + (photoIdCounter++) }));
+
+  const recPlants = [
+    { name:'Flame of the Forest', sci:'Butea monosperma', e:'🌳', attr:'Attracts Purple Sunbird, honeybees; nitrogen fixer' },
+    { name:'Indian Gooseberry', sci:'Phyllanthus emblica', e:'🌿', attr:'Fruit for bulbuls, mynas; medicinal value' },
+    { name:'Karanj', sci:'Millettia pinnata', e:'🌲', attr:'Nesting for kites, crows; soil stabiliser' },
+    { name:'Bael', sci:'Aegle marmelos', e:'🍃', attr:'Attracts hornbills, rollers; drought tolerant' },
+  ];
+
+  document.getElementById('panel-body').innerHTML = `
+
+    <div class="score-block">
+      <div class="score-number">${score}</div>
+      <div class="score-right">
+        <div class="score-label">Ecological Suitability</div>
+        <div class="score-bar"><div class="score-fill" style="width:${score}%"></div></div>
+        <div class="score-desc">${score>82?'Excellent native biodiversity potential':score>68?'Good — suitable for native restoration':'Moderate — site preparation recommended'}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">⛰️</span>
+        <span class="section-title">Terrain Analysis</span>
+      </div>
+      <div class="grid-2">
+        <div class="data-tile"><div class="tile-label">Elevation</div><div class="tile-value">${elev}<span class="tile-unit"> m</span></div></div>
+        <div class="data-tile"><div class="tile-label">Slope</div><div class="tile-value">${slope}<span class="tile-unit">°</span></div></div>
+        <div class="data-tile"><div class="tile-label">Aspect</div><div class="tile-value" style="font-size:14px">${aspect}</div></div>
+        <div class="data-tile"><div class="tile-label">Land Cover</div><div class="tile-value" style="font-size:12px">${lc}</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">🌱</span>
+        <span class="section-title">Soil & Climate</span>
+      </div>
+      <div class="grid-2">
+        <div class="data-tile"><div class="tile-label">Soil pH</div><div class="tile-value">${pH}</div></div>
+        <div class="data-tile"><div class="tile-label">Clay Content</div><div class="tile-value">${clay}<span class="tile-unit">%</span></div></div>
+        <div class="data-tile"><div class="tile-label">Annual Rain</div><div class="tile-value">${rain}<span class="tile-unit"> mm</span></div></div>
+        <div class="data-tile"><div class="tile-label">Avg Temp</div><div class="tile-value">${temp}<span class="tile-unit">°C</span></div></div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">🌿</span>
+        <span class="section-title">Plant Observations Nearby</span>
+      </div>
+      <div class="obs-block">
+        <div class="obs-count">
+          <div class="obs-number">${nPlants.length}</div>
+          <div class="obs-label">records within 50 km<br><span style="color:#888;font-size:10px">India Biodiversity Portal</span></div>
+        </div>
+        ${pEntries.length > 0 ? `
+        <div class="obs-list">
+          ${pEntries.map(e=>`<div class="obs-row"><span class="obs-row-icon">🌱</span>${e.sci ? `<span class="obs-row-thumb" id="${e.photoId}"></span>` : ''}${e.display}</div>`).join('')}
+          ${nPlants.length > 6 ? `<div class="obs-row" style="color:var(--forest-light);font-style:italic">+ ${nPlants.length-6} more species recorded</div>` : ''}
+        </div>` : `<div style="font-size:11px;color:#888;font-style:italic">No records in immediate vicinity</div>`}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">🐦</span>
+        <span class="section-title">Bird Observations Nearby</span>
+      </div>
+      <div class="bird-block">
+        <div class="obs-count">
+          <div class="bird-obs-number">${nBirds.length}</div>
+          <div class="bird-obs-label">records within 50 km<br><span style="color:#bbb;font-size:10px">India Biodiversity Portal</span></div>
+        </div>
+        ${bEntries.length > 0 ? `
+        <div class="obs-list">
+          ${bEntries.map(e=>`<div class="bird-row"><span class="obs-row-icon">🐦</span>${e.sci ? `<span class="bird-row-thumb" id="${e.photoId}"></span>` : ''}${e.display}</div>`).join('')}
+          ${nBirds.length > 6 ? `<div class="bird-row" style="color:#C8860A;font-style:italic">+ ${nBirds.length-6} more species recorded</div>` : ''}
+        </div>` : `<div style="font-size:11px;color:#aaa;font-style:italic">No records in immediate vicinity</div>`}
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">🌳</span>
+        <span class="section-title">Native Plant Recommendations</span>
+      </div>
+      ${recPlants.map(p=>`
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-emoji">${p.e}</div>
+            <div>
+              <div class="plant-name">${p.name}</div>
+              <div class="plant-sci">${p.sci}</div>
+            </div>
+          </div>
+          <div class="plant-attr">${p.attr}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="export-btn" onclick="alert('PDF export coming soon — will include full site ecological report.')">
+      Export Site Report &rarr;
+    </button>
+  `;
+
+  // Now that the placeholders above are in the DOM, kick off their photo lookups.
+  pEntries.forEach(e => { if (e.sci) loadPhotoInto(e.sci, e.photoId, 'obs-row-thumb'); });
+  bEntries.forEach(e => { if (e.sci) loadPhotoInto(e.sci, e.photoId, 'bird-row-thumb'); });
+}
+
+// ── 3D TERRAIN VIEW ──
+// Built with MapLibre GL (a separate renderer from the Leaflet map above —
+// Leaflet has no native 3D/terrain support). The terrain HEIGHT comes from
+// AWS's free public "Terrarium" elevation tiles (global coverage, real
+// elevation encoded directly into pixel RGB values) since our own QGIS
+// elevation tiles are colorized for viewing, not encoded for 3D rendering.
+// Our own Land Cover tiles are draped on top as a texture so the pilot
+// area still shows real EcoMap data, just rendered in 3D.
+const PILOT_CENTER = [73.5, 20.5]; // roughly the middle of the pilot extent
+let terrainMap = null;
+let terrainReady = false;
+let terrainWatchdog = null;
+
+function terrainStatus(title, sub) {
+  document.getElementById('terrain-loading-title').textContent = title;
+  document.getElementById('terrain-loading-sub').textContent = sub || '';
+}
+
+function open3DTerrain() {
+  document.getElementById('terrain-overlay').classList.add('open');
+  if (terrainMap && terrainReady) return; // already built and working, just re-showing the overlay
+  if (terrainMap && !terrainReady) {
+    // Previous attempt got stuck or failed — tear it down and try again.
+    try { terrainMap.remove(); } catch (err) {}
+    terrainMap = null;
+  }
+
+  document.getElementById('terrain-loading').classList.remove('hide');
+  terrainStatus('Building 3D terrain…', 'Fetching elevation and land cover data');
+
+  // Safety net: if the map hasn't finished loading within 10s (slow network,
+  // an ad-blocker silently dropping a tile request, etc.), stop spinning
+  // forever and tell the user plainly instead.
+  terrainWatchdog = setTimeout(() => {
+    if (!terrainReady) {
+      terrainStatus('This is taking longer than expected…', 'Check your connection, or close and try again. (Browser extensions that block tracking/ads sometimes block map tile requests too.)');
+    }
+  }, 10000);
+
+  try {
+    terrainMap = new maplibregl.Map({
+      container: 'terrain-map',
+      center: PILOT_CENTER,
+      zoom: 10.5,
+      pitch: 65,
+      bearing: -20,
+      maxPitch: 85,
+      style: {
+        version: 8,
+        sources: {
+          'osm-base': {
+            type: 'raster',
+            tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png', 'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png', 'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap'
+          },
+          'terrain-dem': {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            encoding: 'terrarium',
+            maxzoom: 15
+          },
+          'ecomap-landcover': {
+            type: 'raster',
+            tiles: [window.location.href.replace(/[^/]*$/, '') + TILES_BASE + 'landcover/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            minzoom: 5,
+            maxzoom: 13
+          }
+        },
+        layers: [
+          { id: 'osm-base-layer', type: 'raster', source: 'osm-base' },
+          { id: 'ecomap-landcover-layer', type: 'raster', source: 'ecomap-landcover', paint: { 'raster-opacity': 0.8 } }
+        ]
+      }
+    });
+  } catch (err) {
+    clearTimeout(terrainWatchdog);
+    terrainStatus('Couldn\'t start the 3D view', String(err?.message || err));
+    console.error('3D terrain init error:', err);
+    return;
+  }
+
+  terrainMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+  // 'idle' fires once the map has actually finished rendering the current
+  // view (style loaded AND initial tiles settled) — a more reliable signal
+  // than 'load' that something is genuinely visible on screen.
+  terrainMap.once('idle', () => {
+    terrainReady = true;
+    clearTimeout(terrainWatchdog);
+    document.getElementById('terrain-loading').classList.add('hide');
+  });
+
+  terrainMap.on('load', () => {
+    try {
+      terrainMap.setTerrain({ source: 'terrain-dem', exaggeration: 1.6 });
+    } catch (err) {
+      console.error('setTerrain failed:', err);
+    }
+  });
+
+  terrainMap.on('error', (e) => {
+    console.error('3D terrain error:', e?.error || e);
+    if (!terrainReady) {
+      terrainStatus('Ran into a problem loading the 3D view', String(e?.error?.message || 'Unknown error — see browser console for details.'));
+      clearTimeout(terrainWatchdog);
+    }
+  });
+}
+
+function close3DTerrain() {
+  document.getElementById('terrain-overlay').classList.remove('open');
+}
+
+loadData();
+</script>
+</body>
+</html>
